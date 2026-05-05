@@ -153,7 +153,8 @@ public function subscribe(Request $request)
         return response()->json([
             'status' => 'success',
             'subscription' => $subscription,
-            'remaining_days' => now()->diffInDays($subscription->end_date, false),
+            // 'remaining_days' => now()->diffInDays($subscription->end_date, false),
+            'remaining_days' => max(0, now()->diffInDays($subscription->end_date, false)),
         ]);
     }
 }

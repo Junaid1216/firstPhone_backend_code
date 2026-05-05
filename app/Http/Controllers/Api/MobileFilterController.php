@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Brand;
 use App\Models\MobileModel;
 use App\Models\VendorMobile;
+use App\Models\Vendor;
 use App\Models\CustomerLastSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -581,6 +582,10 @@ class MobileFilterController extends Controller
                 $filters['brand_name'] = $brand->name;
             }
         }
+
+        $vendor_name = Vendor::where('id', $filters['vendor_id'] ?? null)->value('name');
+        $filters['vendor_name'] = $vendor_name;
+
 
         return response()->json([
             'status' => 'success',
