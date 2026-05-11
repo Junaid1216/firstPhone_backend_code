@@ -369,8 +369,11 @@ class MobileFilterController extends Controller
                         )
                     ) AS distance
                 ", [$lat, $lng, $lat])
-                ->havingRaw('distance <= ?', [$radius])
                 ->orderBy('distance','asc');
+                // Radius sirf tab lage jab city select na ho
+                if (!$request->filled('city')) {
+                    $query->havingRaw('distance <= ?', [$radius]);
+                }
 
             }
 
@@ -459,8 +462,10 @@ class MobileFilterController extends Controller
             if($request->filled('city')){
 
                 $city = strtolower($request->city);
-
-                $query->whereRaw("LOWER(vendors.location) LIKE ?",['%'.$city.'%']);
+                $query->where('vendor_mobiles.city',$request->city);
+                // $query->where('vendor_mobiles.city','Lahore');
+                
+                // $query->whereRaw("LOWER(vendor_mobiles.city) LIKE ?",['%'.$city.'%']);
             }
 
             /*
@@ -481,7 +486,7 @@ class MobileFilterController extends Controller
             |--------------------------------------------------
             */
 
-            $listings = $query->get();
+            $listings = $query->where('stock', '>', 0)->get();
 
             /*
             |--------------------------------------------------
@@ -632,6 +637,7 @@ public function getCities()
 
         $cities = VendorMobile::where('status', 0)
             ->whereNotNull('city')
+            ->where('stock', '>', 0)
             ->select('city')
             ->distinct()
             ->pluck('city');

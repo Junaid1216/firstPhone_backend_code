@@ -92,7 +92,6 @@ class MobileCartController extends Controller
 }
 
 
-
 public function getCart(Request $request)
 {
     $user = Auth::user();
@@ -109,7 +108,7 @@ public function getCart(Request $request)
     ->where('is_ordered', 0)
         ->with([
             'mobileListing' => function($query) {
-                $query->select('id','model_id','price','location','image','vendor_id','brand_id','stock');
+                $query->select('id','model_id','price','location','image','vendor_id','brand_id', 'stock');
             },
             'mobileListing.vendor:id,name',
             'mobileListing.brand:id,name',
@@ -190,6 +189,7 @@ public function updateQuantity(Request $request)
         $cart->quantity = $request->quantity;
         $cart->save();
 
+       
         return response()->json([
             'message' => 'Cart quantity updated successfully',
             'data' => [
@@ -209,7 +209,8 @@ public function updateQuantity(Request $request)
 }
 
 
-    public function deleteCart(Request $request)
+
+   public function deleteCart(Request $request)
 {
     $user = Auth::user();
 
@@ -249,7 +250,6 @@ public function updateQuantity(Request $request)
     ], 200);
 }
 
-
 public function checkout(Request $request)
 {
     try {
@@ -282,7 +282,7 @@ public function checkout(Request $request)
                     ->value('vendor_id');
             }
 
-           $checkout = CheckOut::updateOrCreate(
+            $checkout = CheckOut::updateOrCreate(
                 [
                     'user_id'    => $userId,
                     'vendor_id'  => $vendorId,
@@ -298,6 +298,7 @@ public function checkout(Request $request)
                     'quantity'    => $item['quantity'] ?? 1,
                 ]
             );
+
 
             $checkouts[] = [
                 // 'checkout_id' => $checkout->id,
@@ -325,6 +326,8 @@ public function checkout(Request $request)
         ], 500);
     }
 }
+
+
 
 
 }

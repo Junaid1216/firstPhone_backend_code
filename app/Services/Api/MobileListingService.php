@@ -189,22 +189,22 @@ public function getcustomernearbyListings($vendorLat, $vendorLng, $radius = 50)
             $videoUrls = array_map(fn ($vid) => asset($vid), $videos);
 
             return [
-                'customer_id' => $listing->customer->id,
-                'customer_name' => $listing->customer->name,
-                'customer_phone' => $listing->customer->phone,
-                'customer_image' => $listing->customer->image,
-                'id' => $listing->id,
-                'brand' => $listing->brand,
-                'model' => $listing->model,
-                'storage' => $listing->storage,
-                'ram' => $listing->ram,
-                'condition' => $listing->condition,
+                'customer_id' => $listing->customer->id ?? null,
+                'customer_name' => $listing->customer->name ?? null,
+                'customer_phone' => $listing->customer->phone ?? null,
+                'customer_image' => $listing->customer->image ?? null,
+                'id' => $listing->id ?? null,
+                'brand' => $listing->brand ?? null,
+                'model' => $listing->model ?? null,
+                'storage' => $listing->storage ?? null,
+                'ram' => $listing->ram ?? null,
+                'condition' => $listing->condition ?? null,
                 'customer' => $listing->customer ? $listing->customer->name : null,
-                'price' => $listing->price,
-                'about' => $listing->about,
-                'image' => $imageUrls,
-                'video' => $videoUrls,
-                'distance' => round($listing->distance, 1) . ' km',
+                'price' => $listing->price ?? null,
+                'about' => $listing->about ?? null,
+                'image' => $imageUrls ?? [],
+                'video' => $videoUrls ?? [],
+                'distance' => round($listing->distance, 1) . ' km' ?? null,
             ];
         });
 }
