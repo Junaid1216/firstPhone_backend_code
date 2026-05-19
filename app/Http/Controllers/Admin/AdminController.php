@@ -17,6 +17,7 @@ use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
@@ -96,6 +97,37 @@ class AdminController extends Controller
 
         return back()->with('success', 'Profile Updated Successfully');
     }
+
+    public function profile_change_password(Request $request)
+{
+    $request->validate([
+        'new_password' => 'required',
+        'new_password_confirmation' => 'required|same:new_password',
+    ],[
+        'new_password.required' => 'Please enter new password',
+        'new_password_confirmation.required' => 'Please confirm password',
+        'new_password_confirmation.same' => 'Confirm password does not match',
+    ]);
+
+    $user = Auth::guard('admin')->user();
+
+    // Prevent same password reuse
+    if (Hash::check($request->new_password, $user->password)) {
+
+        return back()->with([
+            'status' => false,
+            'error' => 'New Password Cannot Be Same As Old Password'
+        ]);
+    }
+
+    $user->password = Hash::make($request->new_password);
+    $user->save();
+
+    return back()->with([
+        'status' => true,
+        'success' => 'Password Updated Successfully'
+    ]);
+}
 
     public function forgetPassword()
     {
