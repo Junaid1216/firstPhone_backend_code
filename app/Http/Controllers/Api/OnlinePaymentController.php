@@ -35,11 +35,16 @@ class OnlinePaymentController extends Controller
             $lastOrder = Order::orderBy('id', 'desc')->first();
             $newOrderNumber = $lastOrder ? $lastOrder->order_number + 1 : 10000000;
 
+            $customer = auth()->user();
+
             // Create Order
             $order = '';
             if($request->delivery_method == 'Online'){
                   $order = Order::create([
-                    'customer_id'      => auth()->id(),
+                    'customer_id'      => $customer->id,
+                    'customer_name'    => $customer->name,
+                    'customer_email'   => $customer->email,
+                    'customer_phone'   => $customer->phone,
                     'order_number'     => $newOrderNumber,
                     'payment_status'   => 'paid',
                     'order_status'     => 'inprogress',
@@ -49,7 +54,10 @@ class OnlinePaymentController extends Controller
                 ]);
             } else {
                     $order = Order::create([
-                    'customer_id'      => auth()->id(),
+                    'customer_id'      => $customer->id,
+                    'customer_name'    => $customer->name,
+                    'customer_email'   => $customer->email,
+                    'customer_phone'   => $customer->phone,
                     'order_number'     => $newOrderNumber,
                     'payment_status'   => 'unpaid',
                     'order_status'     => 'inprogress',
@@ -66,11 +74,14 @@ class OnlinePaymentController extends Controller
             if (isset($products['product_id'])) {
                 $orderedListingIds[] = $products['product_id'];
                 $vendorIds[] = $products['vendor_id'];
-                $productData = VendorMobile::with(['brand','model'])->find($products['product_id']);
+                $productData = VendorMobile::with(['brand','model','vendor'])->find($products['product_id']);
                 OrderItem::create([
                     'order_id'   => $order->id,
                     'product_id' => $products['product_id'],
                     'vendor_id'  => $products['vendor_id'],
+                    'vendor_name'  => $productData->vendor->name ?? null,
+                    'vendor_email' => $productData->vendor->email ?? null,
+                    'vendor_phone' => $productData->vendor->phone ?? null,
                     'quantity'   => $products['quantity'] ?? 1,
                     'price'      => $products['price'],
 
@@ -114,11 +125,14 @@ class OnlinePaymentController extends Controller
                 foreach ($products as $product) {
                     $vendorIds[] = $product['vendor_id'];
                     $orderedListingIds[] = $product['product_id'];
-                    $productData = VendorMobile::with(['brand','model'])->find($products['product_id']);
+                    $productData = VendorMobile::with(['brand','model','vendor'])->find($products['product_id']);
                     OrderItem::create([
                         'order_id'   => $order->id,
                         'product_id' => $product['product_id'],
                         'vendor_id'  => $product['vendor_id'],
+                        'vendor_name'  => $productData->vendor->name ?? null,
+                        'vendor_email' => $productData->vendor->email ?? null,
+                        'vendor_phone' => $productData->vendor->phone ?? null,
                         'quantity'   => $product['quantity'] ?? 1,
                         'price'      => $product['price'],
 

@@ -109,6 +109,7 @@ class HomeRepository implements HomeRepositoryInterface
             ->join('vendors', 'vendor_mobiles.vendor_id', '=', 'vendors.id')
             ->where('vendor_mobiles.stock', '>', 0)
             ->where('vendor_mobiles.status', '==', 0)
+            ->where('vendors.status', '!=', 'deactivated')
             ->select(
                 'vendor_mobiles.id',
                 'vendor_mobiles.vendor_id',
@@ -176,7 +177,13 @@ class HomeRepository implements HomeRepositoryInterface
 
         $query = OrderItem::with(['product.brand', 'product.model', 'product.vendor', 'order'])
             ->whereHas('order', fn($q) => $q->where('order_status', 'delivered'))
-            ->whereHas('product', fn($q) => $q->where('stock', '>', 0)->where('status', '==', 0));
+             ->whereHas('product', function ($q) {
+                $q->where('stock', '>', 0)
+                ->where('status', 0)
+                ->whereHas('vendor', function ($vendor) {
+                    $vendor->where('status', '!=', 'deactivated');
+                });
+            });
 
         // Search filter
         if ($search) {

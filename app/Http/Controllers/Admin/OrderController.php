@@ -77,23 +77,29 @@ class OrderController extends Controller
 
         // 👤 Customer
         ->addColumn('customer', function ($order) {
-            if (!$order->customer) return 'N/A';
+            $name = $order->customer->name ?? $order->customer_name;
+            $email = $order->customer->email ?? $order->customer_email;
+            $phone = $order->customer->phone ?? $order->customer_phone;
 
-            return $order->customer->name.'<br>
-                <small><a href="mailto:'.$order->customer->email.'">'.$order->customer->email.'</a></small><br>
-                <small><a href="tel:'.$order->customer->phone.'">'.$order->customer->phone.'</a></small>';
+            return $name.'<br>
+            <small><a href="mailto:'.$email.'">'.$email.'</a></small><br>
+            <small><a href="tel:'.$phone.'">'.$phone.'</a></small>';
         })
 
         // 🏪 Vendor (Buy From)
         ->addColumn('vendor', function ($order) {
 
-            $vendor = $order->items->first()->vendor ?? null;
+            $item = $order->items->first();
 
-            if (!$vendor) return 'No Vendor';
+            if (!$item) return 'No Vendor';
 
-            return $vendor->name.'<br>
-                <small><a href="mailto:'.$vendor->email.'">'.$vendor->email.'</a></small><br>
-                <small><a href="tel:'.$vendor->phone.'">'.$vendor->phone.'</a></small>';
+            $vendorName  = $item->vendor->name ?? $item->vendor_name;
+            $vendorEmail = $item->vendor->email ?? $item->vendor_email;
+            $vendorPhone = $item->vendor->phone ?? $item->vendor_phone;
+
+            return $vendorName.'<br>
+                <small><a href="mailto:'.$vendorEmail.'">'.$vendorEmail.'</a></small><br>
+                <small><a href="tel:'.$vendorPhone.'">'.$vendorPhone.'</a></small>';
         })
 
         // 📱 Products
@@ -358,7 +364,9 @@ class OrderController extends Controller
 
         // 🏪 Vendor
         ->addColumn('vendor', function ($c) {
-            return $c->orderItem->vendor->name ?? '-';
+            return $c->orderItem->vendor->name
+            ?? $c->orderItem->vendor_name
+            ?? '-';
         })
 
         // 📝 Reason
@@ -643,7 +651,7 @@ class OrderController extends Controller
                     'user_type' => 'vendors',
                     'targetable_id' => $order->items->first()->vendor->id ?? null,
                     'targetable_type' => 'App\Models\Vendor',
-                    'token' => $order->items->first()->vendor->fcm_token ?? null,
+                    'token' => $order->items->first()?->vendor?->fcm_token,
                     'title' => "Order Cancellation Approved",
                     'message' => "Your cancellation request for order #{$order->order_number} has been approved."
                 ],
@@ -651,7 +659,7 @@ class OrderController extends Controller
                     'user_type' => 'customers',
                     'targetable_id' => $order->customer->id ?? null,
                     'targetable_type' => 'App\Models\User',
-                    'token' => $order->customer->fcm_token ?? null,
+                    'token' => $order->customer?->fcm_token,
                     'title' => "Order Cancelled",
                     'message' => "Your order #{$order->order_number} has been cancelled."
                 ]
@@ -667,7 +675,7 @@ class OrderController extends Controller
                     'user_type' => 'vendors',
                     'targetable_id' => $order->items->first()->vendor->id ?? null,
                     'targetable_type' => 'App\Models\Vendor',
-                    'token' => $order->items->first()->vendor->fcm_token ?? null,
+                    'token' => $order->items->first()?->vendor?->fcm_token,
                     'title' => "Cancellation Rejected",
                     'message' => "Cancellation request for order #{$order->order_number} has been rejected."
                 ],
@@ -675,7 +683,7 @@ class OrderController extends Controller
                     'user_type' => 'customers',
                     'targetable_id' => $order->customer->id ?? null,
                     'targetable_type' => 'App\Models\User',
-                    'token' => $order->customer->fcm_token ?? null,
+                    'token' => $order->customer?->fcm_token,
                     'title' => "Cancellation Rejected",
                     'message' => "Your cancellation request for order #{$order->order_number} was rejected."
                 ]
@@ -698,7 +706,7 @@ class OrderController extends Controller
                     'targetable_type' => $notify['targetable_type'],
                     'type' => 'order_cancellation',
                 ]);
-
+            
                 if (!empty($notify['token'])) {
                     NotificationHelper::sendFcmNotification(
                         $notify['token'],

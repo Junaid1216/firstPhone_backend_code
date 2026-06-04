@@ -72,6 +72,7 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
     Route::get('dashboard', [AdminController::class, 'getdashboard'])->name('admin.dashboard');
     Route::get('profile', [AdminController::class, 'getProfile']);
     Route::post('update-profile', [AdminController::class, 'update_profile']);
+    Route::post('update-password', [AdminController::class, 'profile_change_password'])->name('profile.change-password');
     Route::get('logout', [AdminController::class, 'logout'])->name('user.logout');
 
 
