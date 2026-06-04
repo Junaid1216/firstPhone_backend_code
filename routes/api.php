@@ -84,6 +84,7 @@ Route::prefix('forgot-password')->group(function () {
 
 //check email api
 Route::post('/check-email', [AuthController::class, 'checkEmail']);
+Route::post('/check-user', [AuthController::class, 'checkUser']);
 
 //social login
 Route::post('/social-login', [SocialLoginController::class, 'socialLogin']);

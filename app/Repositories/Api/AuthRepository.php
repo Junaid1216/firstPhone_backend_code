@@ -619,5 +619,37 @@ public function updateProfile(array $request)
     ];
 }
 
+    public function checkUser($email)
+    {
+        $isCustomer = User::where('email', $email)->exists();
+        $isVendor = Vendor::where('email', $email)->exists();
+
+        if (!$isCustomer && !$isVendor) {
+            return [
+                'email' => $email,
+                'type' => null,
+                'exists' => false,
+                'message' => 'No account found with this email',
+            ];
+        }
+
+        if ($isCustomer && $isVendor) {
+            $type = 'both';
+            $message = 'Email exists as both customer and vendor';
+        } elseif ($isCustomer) {
+            $type = 'customer';
+            $message = 'This email belongs to a customer';
+        } else {
+            $type = 'vendor';
+            $message = 'This email belongs to a vendor';
+        }
+
+        return [
+            'email' => $email,
+            'type' => $type,
+            'exists' => true,
+            'message' => $message,
+        ];
+    }
 
 }

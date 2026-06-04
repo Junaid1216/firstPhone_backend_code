@@ -70,4 +70,9 @@ class AuthService
     {
         return $this->authRepo->checkEmail($request->email);
     }
+
+    public function checkUser($request)
+    {
+        return $this->authRepo->checkUser($request->email);
+    }
 }

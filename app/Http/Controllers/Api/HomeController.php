@@ -30,7 +30,7 @@ class HomeController extends Controller
     public function allVendors()
     {
         try {
-            $data = Vendor::select('id', 'name', 'email', 'phone', 'location')->latest()->get();
+            $data = Vendor::select('id', 'name', 'email', 'phone', 'location')->where('status', 'activated')->latest()->get();
             return ResponseHelper::success($data, 'Vendors retrieved successfully', null, 200);
         } catch (\Exception $e) {
             return ResponseHelper::error($e->getMessage(), 'An error occurred while retrieving vendors', 'error', 500);

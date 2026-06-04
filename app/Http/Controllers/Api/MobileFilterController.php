@@ -392,7 +392,8 @@ class MobileFilterController extends Controller
             }
 
             if($request->filled('vendor_id')){
-                $query->where('vendor_mobiles.vendor_id',$request->vendor_id);
+                $query->where('vendor_mobiles.vendor_id',$request->vendor_id)
+                    ->where('vendors.status', '!=', 'deactivated'); 
             }
 
             $query->where('vendor_mobiles.status',0);
@@ -638,6 +639,9 @@ public function getCities()
         $cities = VendorMobile::where('status', 0)
             ->whereNotNull('city')
             ->where('stock', '>', 0)
+            ->whereHas('vendor', function($query) {
+                $query->where('status', 'activated');
+            })
             ->select('city')
             ->distinct()
             ->pluck('city');
