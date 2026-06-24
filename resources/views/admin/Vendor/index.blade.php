@@ -12,14 +12,11 @@
                                 <h4>Vendors</h4>
                             </div>
                             <div class="card-body table-striped table-bordered table-responsive">
-                                <div class="d-flex justify-content-between mb-3">
-                                @if (Auth::guard('admin')->check() ||
+                               @if (Auth::guard('admin')->check() ||
                                         ($sideMenuPermissions->has('Vendors') && $sideMenuPermissions['Vendors']->contains('create')))
                                     <a class="btn btn-primary mb-3 text-white"
                                         href="{{ url('/admin/vendor-create') }}">Create</a>
                                 @endif
-                                
-                                </div>
 
                                 {{-- @if (Auth::guard('admin')->check() || ($sideMenuPermissions->has('users') && $sideMenuPermissions['users']->contains('view')))
                                     <a class="btn btn-primary mb-3 text-white" href="{{ url('admin/users/trashed') }}">View
@@ -33,6 +30,8 @@
                                             <th>Date & Time</th>
                                             <th>Name</th>
                                             <th>Package Enabled</th>
+                                            <!-- <th>Subscription Expiry Date</th>
+                                            <th>Plan Renewal</th> -->
                                             <th>Email</th>
                                             <th>Phone</th>
                                             <th>CNIC Front</th>
@@ -44,7 +43,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        
+                                       
                                     </tbody>
                                 </table>
                             </div> <!-- /.card-body -->
@@ -134,7 +133,6 @@
 @section('js')
 <script>
     $(document).ready(function() {
-
         $(document).keydown(function (e) {
             if (e.key === "Escape") {
                 $('.modal.show').modal('hide');
@@ -162,6 +160,8 @@
                 { data: 'created_at' },
                 { data: 'name' },
                 { data: 'package' },
+                // { data: 'subscription_expiry', orderable: false, searchable: false },
+                // { data: 'plan_renewal', orderable: false, searchable: false },
                 { data: 'email' },
                 { data: 'phone' },
                 { data: 'cnic_front', orderable: false, searchable: false },
@@ -254,6 +254,7 @@
                                 activated: ['deactivated'],
                                 deactivated: ['activated']
                             };
+
                         // ✅ Rebuild dropdown menu
                         const dropdownMenu = btn.next('.dropdown-menu');
                         dropdownMenu.empty();
@@ -300,6 +301,62 @@
             $('#cnicModal').modal('show');
         });
 
+        // ===== Plan Renewal =====
+        $(document).on('change', '.renew-plan-select', function() {
+            const select = $(this);
+            const vendorId = select.data('vendor-id');
+            const planId = select.val();
+            const planName = select.find('option:selected').data('plan-name');
+
+            if (!planId) {
+                return;
+            }
+
+            select.prop('disabled', true);
+
+            swal({
+                title: "Are you sure you want to renew this plan?",
+                text: planName + " will be activated for 30 days starting today. Any remaining days on the current plan will not be carried forward.",
+                icon: "warning",
+                buttons: true,
+                dangerMode: false,
+            }).then(function(confirmed) {
+                if (!confirmed) {
+                    select.val('');
+                    select.prop('disabled', false);
+                    return;
+                }
+
+                $.ajax({
+                    url: "{{ route('vendor.renew-plan') }}",
+                    type: "POST",
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    data: {
+                        vendor_id: vendorId,
+                        subscription_plan_id: planId,
+                    },
+                    success: function(res) {
+                        if (!res.success) {
+                            toastr.error(res.message || 'Failed to renew plan');
+                            select.val('');
+                            return;
+                        }
+
+                        toastr.success(res.message);
+                        table.ajax.reload(null, false);
+                    },
+                    error: function(xhr) {
+                        const message = xhr.responseJSON?.message || 'Error renewing plan';
+                        toastr.error(message);
+                        select.val('');
+                    },
+                    complete: function() {
+                        select.prop('disabled', false);
+                    }
+                });
+            });
+        });
+
         // ===== Shop Images Modal =====
         $(document).on('click', '.view-shop-images', function() {
             const images = $(this).data('images');
@@ -318,6 +375,5 @@
         });
     });
 </script>
-
 
 @endsection

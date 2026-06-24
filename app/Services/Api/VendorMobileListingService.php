@@ -33,93 +33,259 @@ class VendorMobileListingService
         $this->vendormobileListingRepo = $vendormobileListingRepo;
     }
 
-     public function createListing($request)
+    //  public function createListing($request)
+    // {
+    //     $vendorId = Auth::id();
+    //     $activePlan = VendorSubscription::with('plan')->where('vendor_id', $vendorId)->where('is_active', true)->first();
+    //     // if (VendorSubscriptionProducts::where('vendor_subscription_id', $activePlan->id)->count() >= $activePlan->product_limit) {
+    //     //     throw new AuthorizationException('You have reached the maximum number of listings allowed for your subscription plan');
+    //     // }
+    //     // ✅ Handle media upload
+    //     $mediaPaths = [];
+    //     if ($request->hasFile('image')) {
+    //         foreach ($request->file('image') as $file) {
+    //             $extension = $file->getClientOriginalExtension();
+    //             $filename = time() . '_' . uniqid() . '.' . $extension;
+    //             $file->move(public_path('admin/assets/images/users/'), $filename);
+    //             $mediaPaths[] = 'public/admin/assets/images/users/' . $filename;
+    //         }
+    //     }
+    //     // ✅ Handle video upload
+    //     $videoPaths = [];
+    //     if ($request->hasFile('video')) {
+    //         foreach ($request->file('video') as $file) {
+    //             $extension = $file->getClientOriginalExtension();
+    //             $filename = time() . '_' . uniqid() . '.' . $extension;
+    //             $file->move(public_path('admin/assets/videos/'), $filename);
+    //             $videoPaths[] = 'public/admin/assets/videos/' . $filename;
+    //         }
+    //     }
+
+    //     $data = [
+    //         'brand_id' => $request->brand_id,
+    //         'model_id' => $request->model_id,
+    //         'storage' => $request->storage,
+    //         'ram' => $request->ram,
+    //         'color' => $request->color,
+    //         'price' => $request->price,
+    //         'condition' => $request->condition,
+    //         'about' => $request->about,
+    //         'processor' => $request->processor,
+    //         'display' => $request->display,
+    //         'charging' => $request->charging,
+    //         'refresh_rate' => $request->refresh_rate,
+    //         'main_camera' => $request->main_camera,
+    //         'ultra_camera' => $request->ultra_camera,
+    //         'telephoto_camera' => $request->telephoto_camera,
+    //         'front_camera' => $request->front_camera,
+    //         'build' => $request->build,
+    //         'wireless' => $request->wireless,
+    //         'stock' => $request->stock,
+    //         'ai_features' => $request->ai_features,
+    //         'battery_health' => $request->battery_health,
+    //         'os_version' => $request->os_version,
+    //         'warranty_start' => $request->warranty_start,
+    //         'warranty_end' => $request->warranty_end,
+    //         'pta_approved' => $request->pta_approved,
+    //         'location' => $request->location,
+    //         'latitude' => $request->latitude,
+    //         'longitude' => $request->longitude,
+    //         'vendor_id' => $vendorId,
+    //         'image' => json_encode($mediaPaths),
+    //         'video' => json_encode($videoPaths),
+    //     ];
+
+    //     $data['city'] = $this->updateCitiesFromLocation($request->location);
+
+    //     $listing = $this->vendormobileListingRepo->create($data);
+        
+    //     $listing->load('brand', 'model');
+
+    //     // Convert listing to array
+    //     $listingArray = $listing->toArray();
+
+    //     // Prepend brand & model at the top
+    //     $response = array_merge(
+    //     [
+    //         'id' => $listing->id,
+    //         'brand' => $listing->brand->name ?? null,
+    //         'model' => $listing->model->name ?? null,
+    //     ],
+    //     // Remove brand_id & model_id
+    //     Arr::except($listingArray, ['brand_id', 'model_id', 'brand', 'model']),
+    //     [
+    //         // Replace image paths with full asset URLs
+    //         'image' => array_map(fn($path) => asset($path), $mediaPaths),
+    //         'video' => array_map(fn($path) => asset($path), $videoPaths),
+    //     ]);
+    //     $radius = 50; // default radius in km
+    //     $condition = $request->condition === 'New' ? 'brand-new' : 'Used';
+    //     $customers = MobileRequest::with('customer')
+    //         ->whereNotNull('latitude')
+    //         ->whereNotNull('longitude')
+    //         ->where('brand_id', $listing->brand->id)
+    //         ->where('model_id', $listing->model->id)
+    //         ->where('condition', $listing->condition)
+    //         ->select('*', DB::raw("
+    //                 (6371 * acos(
+    //                     cos(radians($listing->latitude)) 
+    //                     * cos(radians(latitude)) 
+    //                     * cos(radians(longitude) - radians($listing->longitude)) 
+    //                     + sin(radians($listing->latitude)) 
+    //                     * sin(radians(latitude))
+    //                 )) AS distance
+    //             "))
+    //         ->having('distance', '<=', $radius)
+    //         ->orderBy('distance', 'asc')
+    //         ->get();
+    //         // Send email notifications
+    //         $data = $customers->pluck('customer')
+    //               ->filter()      // null remove karega
+    //               ->unique('id')  // duplicate customers remove karega
+    //               ->values()
+    //               ->all();
+    //         $listing->vendor_name = Auth::user()->name;
+    //         $listing->brand_name = Brand::find($listing->brand_id)->name ?? 'Unknown Brand';
+    //         $listing->model_name = MobileModel::find($listing->model_id)->name ?? 'Unknown Model';
+    //         $this->sendBulkEmails($data,NotifyNearByCustomersOfRequestedMobile::class,['data' => $listing]);  
+    //         // Send notifications
+            
+    //         $notification = Notification::create([
+    //                 'user_type' => 'customers',
+    //                 'title' => "New Mobile Listing",
+    //                 'description' => "Good news! A nearby vendor has listed a mobile matching your request for a {$condition} {$listing->brand->name} {$listing->model->name}.",
+    //             ]);
+
+    //         foreach ($customers as $data) {
+    //             NotificationTarget::create([
+    //                 'notification_id' => $notification->id,
+    //                 'targetable_id' => $data->customer->id,
+    //                 'targetable_type' => 'App\Models\User',
+    //                 'type' => 'vendor_mobile_listed',
+    //                 'order_id' => $listing->id,
+    //             ]);
+    //             if (!empty($data->customer->fcm_token)) {
+    //                 NotificationHelper::sendFcmNotification(
+    //                     $data->customer->fcm_token,
+    //                     "New Mobile Listing",
+    //                     "Good news! A nearby vendor has listed a mobile matching your request for a {$condition} {$listing->brand->name} {$listing->model->name}.",
+    //                     [
+    //                         'type' => 'vendor_mobile_listed',
+    //                         'order_id' => (string) $listing->id,
+    //                     ]
+    //                 );
+    //             }
+    //         }
+    //     VendorSubscriptionProducts::create([
+    //         'vendor_subscription_id' => VendorSubscription::where('vendor_id', $vendorId)->where('is_active', true)->first()->id,
+    //         'mobile_id' => $listing->id,
+    //     ]);
+
+    //     return $response;
+    // }
+    public function createListing($request)
     {
         $vendorId = Auth::id();
-        $activePlan = VendorSubscription::with('plan')->where('vendor_id', $vendorId)->where('is_active', true)->first();
-        // if (VendorSubscriptionProducts::where('vendor_subscription_id', $activePlan->id)->count() >= $activePlan->product_limit) {
-        //     throw new AuthorizationException('You have reached the maximum number of listings allowed for your subscription plan');
-        // }
-        // ✅ Handle media upload
-        $mediaPaths = [];
-        if ($request->hasFile('image')) {
-            foreach ($request->file('image') as $file) {
-                $extension = $file->getClientOriginalExtension();
-                $filename = time() . '_' . uniqid() . '.' . $extension;
-                $file->move(public_path('admin/assets/images/users/'), $filename);
-                $mediaPaths[] = 'public/admin/assets/images/users/' . $filename;
-            }
-        }
-        // ✅ Handle video upload
-        $videoPaths = [];
-        if ($request->hasFile('video')) {
-            foreach ($request->file('video') as $file) {
-                $extension = $file->getClientOriginalExtension();
-                $filename = time() . '_' . uniqid() . '.' . $extension;
-                $file->move(public_path('admin/assets/videos/'), $filename);
-                $videoPaths[] = 'public/admin/assets/videos/' . $filename;
-            }
-        }
 
+        $activePlan = VendorSubscription::with('plan')
+            ->where('vendor_id', $vendorId)
+            ->where('is_active', true)
+            ->first();
+            $mediaPaths = [];
+            if ($request->hasFile('image')) {
+                foreach ($request->file('image') as $file) {
+                    $extension = $file->getClientOriginalExtension();
+                    $filename = time() . '_' . uniqid() . '.' . $extension;
+                    $file->move(public_path('admin/assets/images/users/'), $filename);
+                    $mediaPaths[] = 'public/admin/assets/images/users/' . $filename;
+                }
+            }
+            $videoPaths = [];
+            if ($request->hasFile('video')) {
+                foreach ($request->file('video') as $file) {
+                    $extension = $file->getClientOriginalExtension();
+                    $filename = time() . '_' . uniqid() . '.' . $extension;
+                    $file->move(public_path('admin/assets/videos/'), $filename);
+                    $videoPaths[] = 'public/admin/assets/videos/' . $filename;
+                }
+            }
+        $brandId = $request->brand_id; // direct ID aa rahi hai
+        $brand = Brand::find($brandId);
+        if (!$brand) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid Brand ID'
+            ], 422);
+        }
+        $modelName = trim($request->model);
+        $model = MobileModel::where('brand_id', $brandId)
+            ->whereRaw('LOWER(name) = ?', [strtolower($modelName)])
+            ->first();
+        if (!$model) {
+            $model = MobileModel::create([
+                'brand_id' => $brandId,
+                'name' => $modelName,
+            ]);
+        }
         $data = [
-            'brand_id' => $request->brand_id,
-            'model_id' => $request->model_id,
+            'brand_id' => $brand->id,
+            'model_id' => $model->id,
             'storage' => $request->storage,
             'ram' => $request->ram,
-            'color' => $request->color,
             'price' => $request->price,
             'condition' => $request->condition,
             'about' => $request->about,
-            'processor' => $request->processor,
-            'display' => $request->display,
-            'charging' => $request->charging,
-            'refresh_rate' => $request->refresh_rate,
-            'main_camera' => $request->main_camera,
-            'ultra_camera' => $request->ultra_camera,
-            'telephoto_camera' => $request->telephoto_camera,
-            'front_camera' => $request->front_camera,
-            'build' => $request->build,
-            'wireless' => $request->wireless,
             'stock' => $request->stock,
-            'ai_features' => $request->ai_features,
-            'battery_health' => $request->battery_health,
-            'os_version' => $request->os_version,
-            'warranty_start' => $request->warranty_start,
-            'warranty_end' => $request->warranty_end,
             'pta_approved' => $request->pta_approved,
-            'location' => $request->location,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'vendor_id' => $vendorId,
             'image' => json_encode($mediaPaths),
             'video' => json_encode($videoPaths),
+
+            // ❌ Removed fields
+            // 'color' => $request->color,
+            // 'processor' => $request->processor,
+            // 'display' => $request->display,
+            // 'charging' => $request->charging,
+            // 'refresh_rate' => $request->refresh_rate,
+            // 'main_camera' => $request->main_camera,
+            // 'ultra_camera' => $request->ultra_camera,
+            // 'telephoto_camera' => $request->telephoto_camera,
+            // 'front_camera' => $request->front_camera,
+            // 'build' => $request->build,
+            // 'wireless' => $request->wireless,
+            // 'ai_features' => $request->ai_features,
+            // 'battery_health' => $request->battery_health,
+            // 'os_version' => $request->os_version,
+            // 'warranty_start' => $request->warranty_start,
+            // 'warranty_end' => $request->warranty_end,
+            // 'location' => $request->location,
         ];
 
-        $data['city'] = $this->updateCitiesFromLocation($request->location);
-
         $listing = $this->vendormobileListingRepo->create($data);
-        
+
         $listing->load('brand', 'model');
 
-        // Convert listing to array
         $listingArray = $listing->toArray();
 
-        // Prepend brand & model at the top
         $response = array_merge(
-        [
-            'id' => $listing->id,
-            'brand' => $listing->brand->name ?? null,
-            'model' => $listing->model->name ?? null,
-        ],
-        // Remove brand_id & model_id
-        Arr::except($listingArray, ['brand_id', 'model_id', 'brand', 'model']),
-        [
-            // Replace image paths with full asset URLs
-            'image' => array_map(fn($path) => asset($path), $mediaPaths),
-            'video' => array_map(fn($path) => asset($path), $videoPaths),
-        ]);
-        $radius = 50; // default radius in km
+            [
+                'id' => $listing->id,
+                'brand' => $listing->brand->name ?? null,
+                'model' => $listing->model->name ?? null,
+            ],
+            Arr::except($listingArray, ['brand_id', 'model_id', 'brand', 'model']),
+            [
+                'image' => array_map(fn($path) => asset($path), $mediaPaths),
+                'video' => array_map(fn($path) => asset($path), $videoPaths),
+            ]
+        );
+
+        // ✅ Distance logic will work now
+        $radius = 50;
         $condition = $request->condition === 'New' ? 'brand-new' : 'Used';
+
         $customers = MobileRequest::with('customer')
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
@@ -127,63 +293,61 @@ class VendorMobileListingService
             ->where('model_id', $listing->model->id)
             ->where('condition', $listing->condition)
             ->select('*', DB::raw("
-                    (6371 * acos(
-                        cos(radians($listing->latitude)) 
-                        * cos(radians(latitude)) 
-                        * cos(radians(longitude) - radians($listing->longitude)) 
-                        + sin(radians($listing->latitude)) 
-                        * sin(radians(latitude))
-                    )) AS distance
-                "))
+                (6371 * acos(
+                    cos(radians($listing->latitude)) 
+                    * cos(radians(latitude)) 
+                    * cos(radians(longitude) - radians($listing->longitude)) 
+                    + sin(radians($listing->latitude)) 
+                    * sin(radians(latitude))
+                )) AS distance
+            "))
             ->having('distance', '<=', $radius)
             ->orderBy('distance', 'asc')
             ->get();
-            // Send email notifications
-            $data = $customers->pluck('customer')
-                  ->filter()      // null remove karega
-                  ->unique('id')  // duplicate customers remove karega
-                  ->values()
-                  ->all();
-            $listing->vendor_name = Auth::user()->name;
-            $listing->brand_name = Brand::find($listing->brand_id)->name ?? 'Unknown Brand';
-            $listing->model_name = MobileModel::find($listing->model_id)->name ?? 'Unknown Model';
-            $this->sendBulkEmails($data,NotifyNearByCustomersOfRequestedMobile::class,['data' => $listing]);  
-            // Send notifications
-            
-            $notification = Notification::create([
-                    'user_type' => 'customers',
-                    'title' => "New Mobile Listing",
-                    'description' => "Good news! A nearby vendor has listed a mobile matching your request for a {$condition} {$listing->brand->name} {$listing->model->name}.",
-                ]);
 
-            foreach ($customers as $data) {
-                NotificationTarget::create([
-                    'notification_id' => $notification->id,
-                    'targetable_id' => $data->customer->id,
-                    'targetable_type' => 'App\Models\User',
-                    'type' => 'vendor_mobile_listed',
-                    'order_id' => $listing->id,
-                ]);
-                if (!empty($data->customer->fcm_token)) {
-                    NotificationHelper::sendFcmNotification(
-                        $data->customer->fcm_token,
-                        "New Mobile Listing",
-                        "Good news! A nearby vendor has listed a mobile matching your request for a {$condition} {$listing->brand->name} {$listing->model->name}.",
-                        [
-                            'type' => 'vendor_mobile_listed',
-                            'order_id' => (string) $listing->id,
-                        ]
-                    );
-                }
+        $data = $customers->pluck('customer')->filter()->unique('id')->values()->all();
+
+        $listing->vendor_name = Auth::user()->name;
+        $listing->brand_name = Brand::find($listing->brand_id)->name ?? 'Unknown Brand';
+        $listing->model_name = MobileModel::find($listing->model_id)->name ?? 'Unknown Model';
+
+        $this->sendBulkEmails($data, NotifyNearByCustomersOfRequestedMobile::class, ['data' => $listing]);
+
+        $notification = Notification::create([
+            'user_type' => 'customers',
+            'title' => "New Mobile Listing",
+            'description' => "Good news! A nearby vendor has listed a mobile matching your request for a {$condition} {$listing->brand->name} {$listing->model->name}.",
+        ]);
+
+        foreach ($customers as $data) {
+            NotificationTarget::create([
+                'notification_id' => $notification->id,
+                'targetable_id' => $data->customer->id,
+                'targetable_type' => 'App\Models\User',
+                'type' => 'vendor_mobile_listed',
+                'order_id' => $listing->id,
+            ]);
+
+            if (!empty($data->customer->fcm_token)) {
+                NotificationHelper::sendFcmNotification(
+                    $data->customer->fcm_token,
+                    "New Mobile Listing",
+                    "Good news! A nearby vendor has listed a mobile matching your request for a {$condition} {$listing->brand->name} {$listing->model->name}.",
+                    [
+                        'type' => 'vendor_mobile_listed',
+                        'order_id' => (string) $listing->id,
+                    ]
+                );
             }
+        }
+
         VendorSubscriptionProducts::create([
-            'vendor_subscription_id' => VendorSubscription::where('vendor_id', $vendorId)->where('is_active', true)->first()->id,
+            'vendor_subscription_id' => $activePlan->id,
             'mobile_id' => $listing->id,
         ]);
 
         return $response;
     }
-
     public function updateListing($request, $id)
     {
         $vendorId = Auth::id();

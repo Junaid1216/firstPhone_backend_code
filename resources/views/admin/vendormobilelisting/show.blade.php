@@ -27,7 +27,7 @@
                                                 <tr>
                                                     <td>{{ $loop->iteration }}</td>
                                                   <td>
-                                                            @php
+                                                        @php
                                                                 $images = json_decode($mobile->image, true) ?? [];
                                                                 $videos = json_decode($mobile->video, true) ?? [];
 
@@ -63,7 +63,7 @@
                                                                     </video>
                                                                 @endif
                                                             @else
-                                                                <span class="text-muted">No Media</span>
+                                                                <span class="text-muted">No Images/Videos</span>
                                                             @endif
                                                         </td>
                                                 </tr>
@@ -147,7 +147,7 @@
         });
 
         
-  document.addEventListener("DOMContentLoaded", function () {
+   document.addEventListener("DOMContentLoaded", function () {
     var imageModal = document.getElementById('imageModal');
     var carouselInner = document.getElementById('carouselImages');
 
@@ -171,7 +171,7 @@
             } else if (item.type === "video") {
                 div.innerHTML = `
                     <video controls class="w-100" 
-                           style="max-height:65vh; max-width:85%; object-fit:contain;">
+                           style="max-height:65vh; max-width:70%; object-fit:contain;">
                         <source src="${item.src}" type="video/mp4">
                     </video>
                 `;

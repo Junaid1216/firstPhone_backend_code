@@ -54,8 +54,7 @@ use App\Http\Controllers\Admin\VendorMobileListingController;
 });
 /*Admin routes
  * */
-
-Route::get('/admin', [AuthController::class, 'getLoginPage']);
+Route::get('/admins', [AuthController::class, 'getLoginPage']);
 Route::post('/login', [AuthController::class, 'Login']);
 Route::get('/admin-forgot-password', [AdminController::class, 'forgetPassword']);
 Route::post('/admin-reset-password-link', [AdminController::class, 'adminResetPasswordLink']);
@@ -81,23 +80,21 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
         Route::get('/roles', 'index')->name('roles.index')->middleware('check.permission:Roles,view');
         Route::get('/roles-create', 'create')->name('create.role')->middleware('check.permission:Roles,create');
         Route::post('/store-role', 'store')->name('store.role')->middleware('check.permission:Roles,create');
-        Route::get('/roles-permissions/{id}', 'permissions')->name('role.permissions')->middleware('check.permission:Roles,edit');
+        Route::get('/roles-permissions/{id}', 'permissions')->name('role.permissions')->middleware('check.permission:Roles,permissions');
         Route::post('/admin/roles/{id}/permissions/store', 'storePermissions')->name('roles.permissions.store')->middleware('check.permission:role,create');
         Route::delete('/delete-role/{id}', 'delete')->name('delete.role');
     });
 
     // ############ Users #################
     Route::controller(UserController::class)->group(function () {
-        Route::get('/user', 'Index')->name('user.index')->middleware('check.permission:Customers,view');
+       Route::get('/user', 'Index')->name('user.index')->middleware('check.permission:Customers,view');
         Route::get('/user-create', 'createview')->name('user.createview')->middleware('check.permission:Customers,create');
         Route::post('/user-store', 'create')->name('user.create')->middleware('check.permission:Customers,create');
         Route::get('/user-edit/{id}', 'edit')->name('user.edit')->middleware('check.permission:Customers,edit');
         Route::post('/user-update/{id}', 'update')->name('user.update')->middleware('check.permission:Customers,edit');
         Route::delete('/users-destory/{id}', 'delete')->name('user.delete')->middleware('check.permission:Customers,delete');
         Route::delete('/users/{id}/force', 'forceDelete')->name('user.forceDelete')->middleware('check.permission:Customers,delete');
-        Route::post('/users/toggle-status', 'toggleStatus')->name('user.toggle-status');
-        Route::post('/delete-selected-users', 'deleteSelected');
-        Route::post('/delete-all-users', 'deleteAll');
+        Route::post('/users/toggle-status', 'toggleStatus')->name('user.toggle-status')->middleware('check.permission:Customers,status');
 
         //User ajax api
         Route::get('/users-data',  'getUsersData')->name('users.data')->middleware('check.permission:Customers,view');
@@ -106,7 +103,7 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
 
     // ############ Vendors #################
     Route::controller(VendorController::class)->group(function () {
-        Route::get('/vendor', 'index')->name('vendor.index')->middleware('check.permission:Vendors,view');
+       Route::get('/vendor', 'index')->name('vendor.index')->middleware('check.permission:Vendors,view');
         Route::get('/vendors/pending-counter', 'vendorpendingCounter')->name('vendor.pendingCounter');
         Route::get('/vendor-create', 'createView')->name('vendor.createview')->middleware('check.permission:Vendors,create');
         Route::post('/vendor-store', 'create')->name('vendor.create')->middleware('check.permission:Vendors,create');
@@ -114,8 +111,9 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
         Route::post('/vendor-update/{id}', 'update')->name('vendor.update')->middleware('check.permission:Vendors,edit');
         Route::delete('/vendor-destroy/{id}', 'delete')->name('vendor.delete')->middleware('check.permission:Vendors,delete');
         Route::post('/vendor/update-status', 'updateStatus')->name('vendor.update-status');
+        Route::post('/vendor/renew-plan', 'renewPlan')->name('vendor.renew-plan')->middleware('check.permission:Vendors,edit');
         //Vendor ajax api
-         Route::get('/vendors-data',  'getVendorsData')->name('vendors.data')->middleware('check.permission:Vendors,view');
+        Route::get('/vendors-data',  'getVendorsData')->name('vendors.data')->middleware('check.permission:Vendors,view');
     });
 
     // ############ Brands #################
@@ -154,12 +152,12 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
         Route::get('/mobilelisting-show/{id}', 'show')->name('mobile.show');
         Route::post('/mobilelisting/approve/{id}', 'approve')->name('mobilelisting.approve');
         Route::post('/mobilelisting/reject/{id}', 'reject')->name('mobilelisting.reject');
-        Route::post('/mobilelisting-update/{id}', 'update')->name('mobile.update')->middleware('check.permission:MobileListing,edit');
+        Route::post('/mobilelisting-update/{id}', 'update')->name('mobile.update')->middleware('check.permission:Customer Mobiles,edit');
         Route::delete('/mobilelisting-destroy/{id}', 'delete')->name('mobile.delete')->middleware('check.permission:Customer Mobiles,delete');
         Route::post('/mobilelistingActivate/{id}', 'active')->name('mobile.activate');
         Route::post('/mobilelistingDeactivate/{id}', 'deactive')->name('mobile.deactivate');
 
-        Route::get('/mobile-listings-data',  'getMobileListingsData')->name('mobile.listings.data')->middleware('check.permission:Customer Mobiles,view');
+         Route::get('/mobile-listings-data',  'getMobileListingsData')->name('mobile.listings.data')->middleware('check.permission:Customer Mobiles,view');
     });
 
     // ############ Vendor Mobile Listings #################
@@ -179,7 +177,7 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
         Route::delete('/mobilerequest-destroy/{id}', 'delete')->name('mobilerequest.delete')->middleware('check.permission:Mobile Requests,delete');
         Route::patch('/mark-as-read/{id}',  'markAsRead')->name('mobilerequest.markAsRead');
 
-        Route::get('/mobilerequest-data', 'getMobileRequestsData')->name('mobilerequest.data')->middleware('check.permission:Mobile Requests,view');
+         Route::get('/mobilerequest-data', 'getMobileRequestsData')->name('mobilerequest.data')->middleware('check.permission:Mobile Requests,view');
     });
 
     // ############ Sub Admin #################
@@ -191,8 +189,8 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
         Route::post('/subadmin-update/{id}',  'update')->name('subadmin.update')->middleware('check.permission:Sub Admins,edit');
         Route::delete('/subadmin-destroy/{id}',  'destroy')->name('subadmin.destroy')->middleware('check.permission:Sub Admins,delete');
         Route::post('/update-permissions/{id}', 'updatePermissions')->name('update.permissions');
-        Route::post('/subadmin-StatusChange', 'StatusChange')->name('subadmin.StatusChange')->middleware('check.permission:Sub Admins,edit');
-        Route::post('/admin/subadmin/toggle-status', 'toggleStatus')->name('admin.subadmin.toggleStatus');
+        Route::post('/subadmin-StatusChange', 'StatusChange')->name('subadmin.StatusChange')->middleware('check.permission:Sub Admins,status');
+        Route::post('/admin/subadmin/toggle-status', 'toggleStatus')->name('admin.subadmin.toggleStatus')->middleware('check.permission:Sub Admins,status');
         Route::get('/subadmin/subadmin_log_activity/{id}', 'SubAdminLog')->name('admin.subadmin.SubAdminLog');
     });
 
@@ -205,14 +203,14 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
         Route::get('/orders/pending-counter', 'pendingCounter')->name('order.pendingCounter');
         Route::get('/orders/totals', 'getTotals')->name('orders.totals');
 
-        Route::get('/cancel-orders',  'cancel_order')->name('cancel-order.index')->middleware('check.permission:Orders,view');
-        Route::delete('cancel-orders/{id}', 'deleteCancelOrder')->name('cancel-orders.destroy');
+        Route::get('/cancel-orders',  'cancel_order')->name('cancel-order.index')->middleware('check.permission:Cancel Orders,view');
+        Route::delete('cancel-orders/{id}', 'deleteCancelOrder')->name('cancel-orders.destroy')->middleware('check.permission:Cancel Orders,delete');
         Route::get('cancel-orders/pending-counter', 'pendingCancelOrderCounter')->name('cancelOrders.pendingCounter');
         // routes/web.php
-        Route::get('cancel-orders/check-delivery-status/{id}', 'checkDeliveryStatus')->name('cancel-orders.checkDeliveryStatus');
-        Route::post('cancel-orders/update-status/{id}', 'updateCancelStatus')->name('cancel-orders.updateStatus');
+        Route::get('cancel-orders/check-delivery-status/{id}', 'checkDeliveryStatus')->name('cancel-orders.checkDeliveryStatus')->middleware('check.permission:Cancel Orders,status');
+        Route::post('cancel-orders/update-status/{id}', 'updateCancelStatus')->name('cancel-orders.updateStatus')->middleware('check.permission:Cancel Orders,status');
 
-        Route::get('/orders-data', 'getOrdersData')->name('orders.data')->middleware('check.permission:Orders,view');
+         Route::get('/orders-data', 'getOrdersData')->name('orders.data')->middleware('check.permission:Orders,view');
 
         Route::get('/cancel-orders-data',  'getCancelOrdersData')->name('cancel.orders.data')->middleware('check.permission:Cancel Orders,view');
     });
@@ -244,7 +242,7 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
 
     // ############ Faq Routes #################
     Route::controller(FaqController::class)->group(function () {
-         Route::get('faq', 'Faq')->middleware("check.permission:FAQ's,view");
+        Route::get('faq', 'Faq')->middleware("check.permission:FAQ's,view");
         Route::get('faq-edit/{id}', 'FaqsEdit')->name('faq.edit')->middleware("check.permission:FAQ's,edit");
         Route::post('faq-update/{id}', 'FaqsUpdate')->middleware("check.permission:FAQ's,edit");
         Route::get('faq-view', 'FaqView')->middleware('check.permission:Faqs,view');
@@ -256,10 +254,10 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
 
     // ############ Contact Us Routes #################
     Route::controller(ContactController::class)->group(function () {
-        Route::get('/admin/contact-us', 'index')->name('contact.index')->middleware('check.permission:Contact us,view');
+        Route::get('/admin/contact-us', 'index')->name('contact.index')->middleware('check.permission:Contact Us,view');
         Route::get('/admin/contact-us-create', 'create')->name('contact.create')->middleware('check.permission:Contact us,create');
         Route::post('/admin/contact-us-store', 'store')->name('contact.store')->middleware('check.permission:Contact us,create');
-        Route::get('/admin/contact-us-edit/{id}', 'updateview')->name('contact.updateview')->middleware('check.permission:Contact us,edit');
+        Route::get('/admin/contact-us-edit/{id}', 'updateview')->name('contact.updateview')->middleware('check.permission:Contact Us,edit');
         Route::post('/admin/contact-us-update/{id}', 'update')->name('contact.update');
     });
 
@@ -273,8 +271,8 @@ Route::prefix('admin')->middleware(['admin', 'check.subadmin.status'])->group(fu
 
     // ############ Privacy Policy Routes #################
     Route::controller(SecurityController::class)->group(function () {
-        Route::get('privacy-policy', 'PrivacyPolicy')->middleware('check.permission:Privacy & Policy,view');
-        Route::get('privacy-policy-edit', 'PrivacyPolicyEdit')->middleware('check.permission:Privacy & Policy,edit');
+        Route::get('privacy-policy', 'PrivacyPolicy')->middleware('check.permission:Privacy Policy,view');
+        Route::get('privacy-policy-edit', 'PrivacyPolicyEdit')->middleware('check.permission:Privacy Policy,edit');
         Route::post('privacy-policy-update', 'PrivacyPolicyUpdate');
         Route::get('privacy-policy-view', 'PrivacyPolicyView')->middleware('check.permission:Privacy & Policy,view');
     });

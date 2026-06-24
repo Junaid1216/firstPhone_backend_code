@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateVendorRequest;
 use App\Http\Requests\VendorRequest;
+use App\Models\SubscriptionPlan;
 use App\Models\UserRolePermission;
 use App\Models\Vendor;
 use App\Models\VendorImage;
 use App\Services\VendorService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -25,7 +27,6 @@ class VendorController extends Controller
     public function index()
     {
         // $users = $this->vendorService->getAllUsers();
-        
         $sideMenuPermissions = collect();
 
         if (!Auth::guard('admin')->check()) {
@@ -38,7 +39,7 @@ class VendorController extends Controller
             });
         }
 
-        return view('admin.vendor.index', compact( 'sideMenuPermissions'));
+        return view('admin.vendor.index', compact('sideMenuPermissions'));
     }
 
     public function getVendorsData(Request $request)
@@ -48,7 +49,7 @@ class VendorController extends Controller
     if (!Auth::guard('admin')->check()) {
         $user = Auth::guard('subadmin')->user();
 
-         $roleId = $user->roles->first()->id ?? null;
+        $roleId = $user->roles->first()->id ?? null;
 
         $permissions = UserRolePermission::with(['permission', 'sideMenue'])
             ->where('role_id', $roleId)
@@ -60,6 +61,10 @@ class VendorController extends Controller
 
     $query = Vendor::with(['subscription.plan', 'images'])
         ->latest();
+
+    $subscriptionPlans = SubscriptionPlan::where('is_active', true)
+        ->orderBy('price')
+        ->get();
 
     return datatables()->of($query)
         ->addIndexColumn()
@@ -86,6 +91,47 @@ class VendorController extends Controller
             return $user->subscription && $user->subscription->plan
                 ? $user->subscription->plan->name
                 : '<span class="text-muted">No Package</span>';
+        })
+
+        ->addColumn('subscription_expiry', function ($user) {
+            $subscription = $user->subscription;
+
+            if (!$subscription || !$subscription->end_date) {
+                return '<span class="text-muted">No active subscription</span>';
+            }
+
+            $endDate = Carbon::parse($subscription->end_date)->timezone('Asia/Karachi');
+            $remainingDays = max(0, now()->diffInDays($endDate, false));
+            $formattedDate = $endDate->format('d M Y');
+
+            if ($remainingDays === 0 && $endDate->isPast()) {
+                return '<span class="text-danger">'.$formattedDate.'</span><br><small class="text-muted">Expired</small>';
+            }
+
+            return $formattedDate.'<br><small class="text-success">'.$remainingDays.' day(s) remaining</small>';
+        })
+
+        ->addColumn('plan_renewal', function ($user) use ($sideMenuPermissions, $subscriptionPlans) {
+            if (
+                !Auth::guard('admin')->check() &&
+                !($sideMenuPermissions->has('Vendors') && $sideMenuPermissions['Vendors']->contains('edit'))
+            ) {
+                return '<span class="text-muted">—</span>';
+            }
+
+            $currentPlanName = $user->subscription?->plan?->name ?? 'No Package';
+
+            $html = '<select class="form-control form-control-sm renew-plan-select" data-vendor-id="'.$user->id.'" style="min-width: 140px;">
+                <option value="" selected disabled>Plan Renewal</option>';
+
+            foreach ($subscriptionPlans as $plan) {
+                $html .= '<option value="'.$plan->id.'" data-plan-name="'.e($plan->name).'">'.e($plan->name).'</option>';
+            }
+
+            $html .= '</select>
+                <small class="text-muted d-block mt-1">Current: '.e($currentPlanName).'</small>';
+
+            return $html;
         })
 
         // ✅ Email
@@ -134,19 +180,20 @@ class VendorController extends Controller
         ->editColumn('image', function ($user) {
             return $user->image
                 ? '<img src="'.asset($user->image).'" width="50" height="50">'
-                : '<img src="'.asset('public/admin/assets/images/default.png').'" width="50" height="50" alt="Default Image">';
+                :  '<img src="'.asset('public/admin/assets/images/default.png').'" width="50" height="50" alt="Default Image">';
         })
 
         // ✅ Status Dropdown
         ->addColumn('status', function ($user) use ($sideMenuPermissions) {
 
-            if (
+             if (
             Auth::guard('admin')->check() ||
             ($sideMenuPermissions->has('Vendors') &&
             $sideMenuPermissions['Vendors']->contains('status'))
             )
 
             {
+
             $statusColors = [
                 'pending' => 'btn-warning',
                 'activated' => 'btn-primary',
@@ -221,12 +268,45 @@ class VendorController extends Controller
 
         ->rawColumns([
             'email','phone','cnic_front','cnic_back',
-            'shop_images','image','status','actions','package'
+            'shop_images','image','status','actions','package',
+            'subscription_expiry','plan_renewal'
         ])
         ->make(true);
 }
 
-     public function vendorpendingCounter()
+    public function renewPlan(Request $request)
+    {
+        $request->validate([
+            'vendor_id' => 'required|exists:vendors,id',
+            'subscription_plan_id' => 'required|exists:subscription_plans,id',
+        ]);
+
+        $plan = SubscriptionPlan::findOrFail($request->subscription_plan_id);
+
+        if (!$plan->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selected subscription plan is not active.',
+            ], 422);
+        }
+
+        $subscription = $this->vendorService->renewVendorPlan(
+            (int) $request->vendor_id,
+            (int) $request->subscription_plan_id
+        );
+
+        $endDate = Carbon::parse($subscription->end_date)->timezone('Asia/Karachi')->format('d M Y');
+
+        return response()->json([
+            'success' => true,
+            'message' => $plan->name.' plan renewed successfully for '.$plan->duration_days.' days.',
+            'expiry_date' => $endDate,
+            'remaining_days' => max(0, now()->diffInDays($subscription->end_date, false)),
+            'plan_name' => $plan->name,
+        ]);
+    }
+
+    public function vendorpendingCounter()
     {
         $count = $this->vendorService->pendingVendorCount();
         return response()->json(['count' => $count]);
@@ -284,7 +364,7 @@ class VendorController extends Controller
             'location',
         ]);
 
-         $data['repair_service'] = $request->has('has_repairing') ? 1 : 0;
+        $data['repair_service'] = $request->has('has_repairing') ? 1 : 0;
 
         if ($request->filled('password')) {
             $data['password'] = bcrypt($request->password);
@@ -316,6 +396,6 @@ class VendorController extends Controller
     public function delete($id)
     {
         $deleted = $this->vendorService->deleteUser($id);
-        return redirect()->back()->with($deleted ? 'success' : 'error', $deleted ? 'Vendor Deleted Successfully' : 'User not found');
+        return redirect()->back()->with($deleted ? 'success' : 'error', $deleted ? 'Vendor Deleted Successfully' : 'User Not Found');
     }
 }

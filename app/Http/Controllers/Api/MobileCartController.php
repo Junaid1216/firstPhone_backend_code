@@ -13,83 +13,174 @@ class MobileCartController extends Controller
 {
     //
 
-   public function store(Request $request)
-{
-    try {
+    // public function store(Request $request)
+    // {
+    //     try {
 
-        $userId = Auth::id();
-        $listingId = $request->mobile_listing_id;
-        $quantity = $request->quantity;
+    //         $userId = Auth::id();
+    //         $listingId = $request->mobile_listing_id;
+    //         $quantity = $request->quantity;
 
-        // ✅ Get mobile listing with vendor + stock
-        $mobile = VendorMobile::find($listingId);
+    //         // ✅ Get mobile listing with vendor + stock
+    //         $mobile = VendorMobile::find($listingId);
 
-        if (!$mobile) {
-            return response()->json([
-                'message' => 'Mobile listing not found'
-            ], 404);
-        }
+    //         if (!$mobile) {
+    //             return response()->json([
+    //                 'message' => 'Mobile listing not found'
+    //             ], 404);
+    //         }
 
-        // 🛑 Stop if requested quantity > stock
-        if ($quantity > $mobile->stock) {
-            return response()->json([
-                'message' => 'Quantity cannot be greater than available stock'
-            ], 409);
-        }
-
-
-        // 🔍 Check all ACTIVE cart items of user
-        $existingCarts = MobileCart::where('user_id', $userId)
-            ->where('is_ordered', 0)
-            ->get();
+    //         // 🛑 Stop if requested quantity > stock
+    //         if ($quantity > $mobile->stock) {
+    //             return response()->json([
+    //                 'message' => 'Quantity cannot be greater than available stock'
+    //             ], 409);
+    //         }
 
 
-        // If user already has items in cart
-        if ($existingCarts->count() > 0) {
+    //         // 🔍 Check all ACTIVE cart items of user
+    //         $existingCarts = MobileCart::where('user_id', $userId)
+    //             ->where('is_ordered', 0)
+    //             ->get();
 
-            // Get the vendor of first cart item
-            $currentVendorId = $existingCarts->first()->mobileListing->vendor_id;
 
-            // 🛑 Block if trying to add item from DIFFERENT vendor
-            if ($currentVendorId != $mobile->vendor_id) {
+    //         // If user already has items in cart
+    //         if ($existingCarts->count() > 0) {
+
+    //             // Get the vendor of first cart item
+    //             $currentVendorId = $existingCarts->first()->mobileListing->vendor_id;
+
+    //             // 🛑 Block if trying to add item from DIFFERENT vendor
+    //             if ($currentVendorId != $mobile->vendor_id) {
+    //                 return response()->json([
+    //                     'message' => 'Clear your cart to add items from a different vendor'
+    //                 ], 409);
+    //             }
+
+    //             // 🛑 If SAME item already exists in cart
+    //             $sameItem = $existingCarts->where('mobile_listing_id', $listingId)->first();
+
+    //             if ($sameItem) {
+    //                 return response()->json([
+    //                     'message' => 'Item already added to cart. Please check your cart.'
+    //                 ], 409);
+    //             }
+    //         }
+
+
+    //         // ✅ Safe to add item
+    //         $mobileCart = MobileCart::create([
+    //             'user_id' => $userId,
+    //             'mobile_listing_id' => $listingId,
+    //             'quantity' => $quantity,
+    //             'is_ordered' => 0
+    //         ]);
+
+    //         return response()->json([
+    //             'message' => 'Mobile added to cart successfully',
+    //             'data' => $mobileCart
+    //         ], 200);
+
+
+    //     } catch (\Exception $e) {
+
+    //         return response()->json([
+    //             'message' => 'Something went wrong!',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+    public function store(Request $request)
+    {
+        try {
+
+            $userId   = Auth::id();
+            $listingId = $request->mobile_listing_id;
+            $quantity  = (int) $request->quantity;
+            // return $userId;
+            // ✅ Validate basic input
+            if (!$listingId || $quantity <= 0) {
                 return response()->json([
-                    'message' => 'Clear your cart to add items from a different vendor'
+                    'message' => 'Invalid listing or quantity'
+                ], 422);
+            }
+
+            // ✅ Get mobile listing
+            $mobile = VendorMobile::find($listingId);
+
+            if (!$mobile) {
+                return response()->json([
+                    'message' => 'Mobile listing not found'
+                ], 404);
+            }
+
+            // 🛑 Stock check
+            if ($quantity > $mobile->stock) {
+                return response()->json([
+                    'message' => 'Quantity cannot be greater than available stock'
                 ], 409);
             }
 
-            // 🛑 If SAME item already exists in cart
-            $sameItem = $existingCarts->where('mobile_listing_id', $listingId)->first();
+            // ✅ Get cart with relation (IMPORTANT FIX)
+            $existingCarts = MobileCart::with('mobileListing')
+                ->where('user_id', $userId)
+                ->where('is_ordered', 0)
+                ->get();
 
-            if ($sameItem) {
-                return response()->json([
-                    'message' => 'Item already added to cart. Please check your cart.'
-                ], 409);
+            if ($existingCarts->isNotEmpty()) {
+
+                $firstCart = $existingCarts->first();
+
+                // 🛑 Handle broken relation (NULL FIX)
+                if (!$firstCart->mobileListing) {
+                    return response()->json([
+                        'message' => 'Some cart items are invalid. Please clear your cart.'
+                    ], 409);
+                }
+
+                $currentVendorId = $firstCart->mobileListing->vendor_id;
+
+                // 🛑 Different vendor check
+                if ($currentVendorId != $mobile->vendor_id) {
+                    return response()->json([
+                        'message' => 'Clear your cart to add items from a different vendor'
+                    ], 409);
+                }
+
+                // 🛑 Same item check
+                $alreadyExists = $existingCarts
+                    ->where('mobile_listing_id', $listingId)
+                    ->first();
+
+                if ($alreadyExists) {
+                    return response()->json([
+                        'message' => 'Item already added to cart. Please check your cart.'
+                    ], 409);
+                }
             }
+
+            // ✅ Create cart item
+            $mobileCart = MobileCart::create([
+                'user_id' => $userId,
+                'mobile_listing_id' => $listingId,
+                'quantity' => $quantity,
+                'is_ordered' => 0
+            ]);
+
+            return response()->json([
+                'message' => 'Mobile added to cart successfully',
+                'data' => $mobileCart
+            ], 200);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'message' => 'Something went wrong!',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-
-        // ✅ Safe to add item
-        $mobileCart = MobileCart::create([
-            'user_id' => $userId,
-            'mobile_listing_id' => $listingId,
-            'quantity' => $quantity,
-            'is_ordered' => 0
-        ]);
-
-        return response()->json([
-            'message' => 'Mobile added to cart successfully',
-            'data' => $mobileCart
-        ], 200);
-
-
-    } catch (\Exception $e) {
-
-        return response()->json([
-            'message' => 'Something went wrong!',
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
 
 
 public function getCart(Request $request)

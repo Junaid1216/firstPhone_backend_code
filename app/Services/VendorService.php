@@ -199,4 +199,31 @@ class VendorService
     {
         return Vendor::where('status', 'pending')->count();
     }
+
+    public function renewVendorPlan(int $vendorId, int $planId): VendorSubscription
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $plan = SubscriptionPlan::findOrFail($planId);
+
+        VendorSubscription::where('vendor_id', $vendor->id)
+            ->where('is_active', true)
+            ->update(['is_active' => false]);
+
+        $start = now();
+        $end = $start->copy()->addDays($plan->duration_days);
+
+        $subscription = VendorSubscription::create([
+            'vendor_id' => $vendor->id,
+            'subscription_plan_id' => $plan->id,
+            'start_date' => $start,
+            'end_date' => $end,
+            'is_active' => true,
+        ]);
+
+        if ($plan->price == 0 && !$vendor->has_used_free_trial) {
+            $vendor->update(['has_used_free_trial' => true]);
+        }
+
+        return $subscription;
+    }
 }

@@ -29,8 +29,8 @@
                                             <th>ROM </th>
                                             <th>Price (PKR)</th>
                                             <th>Condition</th>
-                                            <th>Color</th>
-                                            <th>Processor</th>
+                                            <!-- <th>Color</th> -->
+                                            <!-- <th>Processor</th>
                                             <th>Screen Size (Inches)</th>
                                             <th>Charging</th>
                                             <th>Refresh Rate</th>
@@ -38,15 +38,15 @@
                                             <th>Ultra Wide Camera</th>
                                             <th>Telephoto Camera</th>
                                             <th>Front Camera</th>
-                                            <th>Body Material</th>
+                                            <th>Body Material</th> -->
                                             {{-- <th>Wireless</th> --}}
                                             <th>Stock</th>
                                             <th>PTA Approved</th>
-                                            <th>AI Features</th>
+                                            <!-- <th>AI Features</th>
                                             <th>Battery Health (%)</th>
                                             <th>OS Version</th>
                                             <th>Warranty Start Date</th>
-                                            <th>Warranty End Date</th>
+                                            <th>Warranty End Date</th> -->
                                             <th>Description</th>
                                             <th>Images/Videos</th>
                                             <th>Actions</th>
@@ -291,7 +291,7 @@
             if ($.fn.DataTable.isDataTable('#table_id_events')) {
                 $('#table_id_events').DataTable().destroy();
             }
-            $('#table_id_events').DataTable({
+             $('#table_id_events').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: "{{ route('vendor.mobiles.data') }}",
@@ -311,28 +311,28 @@
                     { data: 'price', name: 'price' },
                     { data: 'condition', name: 'condition' },
 
-                    { data: 'color', name: 'color' },
-                    { data: 'processor', name: 'processor' },
-                    { data: 'display', name: 'display' },
-                    { data: 'charging', name: 'charging' },
-                    { data: 'refresh_rate', name: 'refresh_rate' },
+                    // { data: 'color', name: 'color' },
+                    // { data: 'processor', name: 'processor' },
+                    // { data: 'display', name: 'display' },
+                    // { data: 'charging', name: 'charging' },
+                    // { data: 'refresh_rate', name: 'refresh_rate' },
 
-                    { data: 'main_camera', name: 'main_camera' },
-                    { data: 'ultra_camera', name: 'ultra_camera' },
-                    { data: 'telephoto_camera', name: 'telephoto_camera' },
-                    { data: 'front_camera', name: 'front_camera' },
+                    // { data: 'main_camera', name: 'main_camera' },
+                    // { data: 'ultra_camera', name: 'ultra_camera' },
+                    // { data: 'telephoto_camera', name: 'telephoto_camera' },
+                    // { data: 'front_camera', name: 'front_camera' },
 
-                    { data: 'build', name: 'build' },
+                    // { data: 'build', name: 'build' },
                     { data: 'stock', name: 'stock' },
 
                     { data: 'pta', name: 'pta_approved', searchable: true },
 
-                    { data: 'ai_features', name: 'ai_features' },
-                    { data: 'battery_health', name: 'battery_health' },
-                    { data: 'os_version', name: 'os_version' },
+                    // { data: 'ai_features', name: 'ai_features' },
+                    // { data: 'battery_health', name: 'battery_health' },
+                    // { data: 'os_version', name: 'os_version' },
 
-                    { data: 'warranty_start', name: 'warranty_start' },
-                    { data: 'warranty_end', name: 'warranty_end' },
+                    // { data: 'warranty_start', name: 'warranty_start' },
+                    // { data: 'warranty_end', name: 'warranty_end' },
 
                     { data: 'about', name: 'about' },
 
